@@ -1,0 +1,43 @@
+# Cursor context exclusion config
+# Reduces tokens consumed by AI codebase search/indexing. Does not affect builds.
+
+# Build outputs and caches
+build/
+.gradle/
+out/
+
+# Game runtime dirs (logs, saves, crash reports - large, no index value)
+run/
+runs/
+run-client2/
+eula.txt
+usercache.json
+*.log.gz
+
+# Dependency jars
+libs/
+
+# IDE and tool caches
+.idea/
+.vscode/
+.codebuddy/
+.aiassistant/
+
+# Binary assets: no text value for indexing, skip to save tokens
+# (read specific paths manually when needed)
+*.ogg
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.mcmeta
+*.nbt
+*.zip
+*.jar
+
+# Generated data
+*.pyc
+
+# Temp and backups
+*.bak
+s.bat
