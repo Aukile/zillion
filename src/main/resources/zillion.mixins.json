@@ -4,9 +4,6 @@
   "package": "net.ankrya.zillion.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "AbstractContainerMenuMixin",
-    "ArmorItemMixin",
-    "ServerGamePacketListenerMixin"
   ],
   "client": [],
   "injectors": {
