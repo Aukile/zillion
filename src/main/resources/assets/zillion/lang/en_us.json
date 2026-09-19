@@ -1,0 +1,11 @@
+{
+  "item.zillion.gazerzero_helmet": "Gazer Zero Helmet",
+  "item.zillion.gazerzero_chestplate": "Gazer Zero Chestplate",
+  "item.zillion.gazerzero_boots": "Gazer Zero Boots",
+  "item.zillion.zillion_driver": "Zillion Driver",
+  "tooltip.zillion.gazerzero": "Bound to the Zillion Driver",
+  "tooltip.zillion.driver": "Equip on the legs slot and press the Henshin key",
+  "key.categories.zillion": "Zillion",
+  "key.zillion.henshin": "Henshin (Gazer Zero)",
+  "itemGroup.zillion": "Zillion"
+}

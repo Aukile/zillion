@@ -1,9 +1,0 @@
-{
-  "vertex": "zillion:gazer_fullscreen",
-  "fragment": "zillion:gazer_composite",
-  "attributes": ["Position", "UV0"],
-  "samplers": [{ "name": "EmissionSampler" }, { "name": "BloomSampler" }],
-  "uniforms": [
-    { "name": "Strength", "type": "float", "count": 1, "values": [0.65] }
-  ]
-}
