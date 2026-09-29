@@ -13,6 +13,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -40,6 +41,16 @@ public final class Zillion {
    public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS = DeferredRegister.create(Registries.ARMOR_MATERIAL, "zillion");
    public static final DataComponents DATA_COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, "zillion");
    public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, "zillion");
+   public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(Registries.SOUND_EVENT, "zillion");
+   /** Played once at the very start of the henshin sequence (assets/zillion/sounds/henshin.ogg). */
+   public static final DeferredHolder<SoundEvent, SoundEvent> HENSHIN_SOUND = SOUNDS.register("henshin",
+         () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("zillion", "henshin")));
+   /** Card "login" sound during the pre-henshin pose (assets/zillion/sounds/gazerzero_login.ogg). */
+   public static final DeferredHolder<SoundEvent, SoundEvent> LOGIN_SOUND = SOUNDS.register("gazerzero_login",
+         () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("zillion", "gazerzero_login")));
+   /** Equip sound of the Zillion Driver (assets/zillion/sounds/zilliondriver.ogg). */
+   public static final DeferredHolder<SoundEvent, SoundEvent> DRIVER_EQUIP_SOUND = SOUNDS.register("zilliondriver",
+         () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("zillion", "zilliondriver")));
    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> GAZERZERO_MATERIAL = ARMOR_MATERIALS.register(
       "gazerzero",
       () -> new ArmorMaterial(
@@ -57,7 +68,7 @@ public final class Zillion {
       () -> new ArmorMaterial(
             makeDefense(0, 0, 0, 0),
             0,
-            SoundEvents.ARMOR_EQUIP_IRON,
+            DRIVER_EQUIP_SOUND, // was SoundEvents.ARMOR_EQUIP_IRON
             () -> Ingredient.of(new ItemLike[]{net.minecraft.world.item.Items.IRON_INGOT}),
             List.of(new Layer(id("zillion_driver"))),
             0.0F,
@@ -102,8 +113,12 @@ public final class Zillion {
       ARMOR_MATERIALS.register(modBus);
       DATA_COMPONENTS.register(modBus);
       ATTACHMENTS.register(modBus);
+      SOUNDS.register(modBus);
       modBus.addListener(ZNetwork::register);
       modBus.addListener(Zillion::addCreative);
+      // delayed-tick scheduler (server queue); the client queue is pumped from ZillionClient
+      net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.tick.ServerTickEvent.Post e) -> com.zillion.util.TickScheduler.tickServer());
+      net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> com.zillion.util.TickScheduler.clearServer());
    }
 
    private static void addCreative(BuildCreativeModeTabContentsEvent event) {

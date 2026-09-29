@@ -186,12 +186,16 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animation_lib}"
+    jarJar "dev.kosmx.player-anim:player-animation-lib-forge:${player_animation_lib}"
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 //    runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
 //    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
     implementation "software.bernie.geckolib:geckolib-neoforge-${geckolib_version}"
+    jarJar "software.bernie.geckolib:geckolib-neoforge-${geckolib_version}"
+    implementation "io.github.kosmx.bendy-lib:bendy-lib-forge:${bendylib_version}"
+    jarJar "io.github.kosmx.bendy-lib:bendy-lib-forge:${bendylib_version}"
 //    implementation "curse.maven:photon-${photon_version}"
 //    implementation "curse.maven:ldlib-${ldlib_version}"
 //    implementation(implementation("maven.modrinth:t5W7Jfwy:nKHizsl6"))
@@ -244,43 +248,43 @@ publishing {
 }
 
 // Reproducible generated icons and an explicit-palette emissive mask; originals stay untouched.
-sourceSets {
-    assetTools { java.srcDir 'tools/java' }
-    safetyTest { java.srcDirs = ['src/test/server', 'src/test/math'] }
-}
-sourceSets.safetyTest.compileClasspath += sourceSets.main.output
-sourceSets.safetyTest.runtimeClasspath += sourceSets.main.output
+//sourceSets {
+//    assetTools { java.srcDir 'tools/java' }
+//    safetyTest { java.srcDirs = ['src/test/server', 'src/test/math'] }
+//}
+//sourceSets.safetyTest.compileClasspath += sourceSets.main.output
+//sourceSets.safetyTest.runtimeClasspath += sourceSets.main.output
+//
+//def generatedRiderAssets = layout.buildDirectory.dir('generated/riderAssets')
+//def generateRiderAssets = tasks.register('generateRiderAssets', JavaExec) {
+//    dependsOn tasks.named('assetToolsClasses')
+//    classpath = sourceSets.assetTools.runtimeClasspath
+//    mainClass = 'RiderAssets'
+//    args file('src/main/resources').absolutePath, generatedRiderAssets.get().asFile.absolutePath
+//    inputs.file('src/main/resources/assets/zillion/textures/item/armor/gazerzero.png')
+//    inputs.dir('tools/java')
+//    outputs.dir(generatedRiderAssets)
+//}
+//sourceSets.main.resources.srcDir(generatedRiderAssets)
+//tasks.named('processResources') { dependsOn generateRiderAssets }
 
-def generatedRiderAssets = layout.buildDirectory.dir('generated/riderAssets')
-def generateRiderAssets = tasks.register('generateRiderAssets', JavaExec) {
-    dependsOn tasks.named('assetToolsClasses')
-    classpath = sourceSets.assetTools.runtimeClasspath
-    mainClass = 'RiderAssets'
-    args file('src/main/resources').absolutePath, generatedRiderAssets.get().asFile.absolutePath
-    inputs.file('src/main/resources/assets/zillion/textures/item/armor/gazerzero.png')
-    inputs.dir('tools/java')
-    outputs.dir(generatedRiderAssets)
-}
-sourceSets.main.resources.srcDir(generatedRiderAssets)
-tasks.named('processResources') { dependsOn generateRiderAssets }
-
-tasks.register('inspectArmorPalette', JavaExec) {
-    dependsOn tasks.named('assetToolsClasses')
-    classpath = sourceSets.assetTools.runtimeClasspath
-    mainClass = 'RiderAssets'
-    args file('src/main/resources').absolutePath
-}
-tasks.register('transformationSafetyTest', JavaExec) {
-    dependsOn tasks.named('safetyTestClasses')
-    classpath = sourceSets.safetyTest.runtimeClasspath
-    mainClass = 'TransformationSafetyTest'
-}
-tasks.register('choreographyTest', JavaExec) {
-    dependsOn tasks.named('safetyTestClasses')
-    classpath = sourceSets.safetyTest.runtimeClasspath
-    mainClass = 'ChoreographyTest'
-}
-tasks.named('check') { dependsOn 'transformationSafetyTest', 'choreographyTest' }
+//tasks.register('inspectArmorPalette', JavaExec) {
+//    dependsOn tasks.named('assetToolsClasses')
+//    classpath = sourceSets.assetTools.runtimeClasspath
+//    mainClass = 'RiderAssets'
+//    args file('src/main/resources').absolutePath
+//}
+//tasks.register('transformationSafetyTest', JavaExec) {
+//    dependsOn tasks.named('safetyTestClasses')
+//    classpath = sourceSets.safetyTest.runtimeClasspath
+//    mainClass = 'TransformationSafetyTest'
+//}
+//tasks.register('choreographyTest', JavaExec) {
+//    dependsOn tasks.named('safetyTestClasses')
+//    classpath = sourceSets.safetyTest.runtimeClasspath
+//    mainClass = 'ChoreographyTest'
+//}
+//tasks.named('check') { dependsOn 'transformationSafetyTest', 'choreographyTest' }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {

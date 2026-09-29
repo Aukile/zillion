@@ -7,5 +7,8 @@
   "tooltip.zillion.driver": "Equip on the legs slot and press the Henshin key",
   "key.categories.zillion": "Zillion",
   "key.zillion.henshin": "Henshin (Gazer Zero)",
-  "itemGroup.zillion": "Zillion"
+  "itemGroup.zillion": "Zillion",
+  "subtitles.zillion.henshin": "Gazer Zero henshin",
+  "subtitles.zillion.gazerzero_login": "Gazer Zero card login",
+  "subtitles.zillion.zilliondriver": "Zillion Driver equipped"
 }

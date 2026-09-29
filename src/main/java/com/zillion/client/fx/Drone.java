@@ -75,7 +75,7 @@ public class Drone {
         return 1f - HenshinInstance.smooth((t - this.spawnTick - 4f) / HenshinTiming.DRONE_FLASH);
     }
 
-    /** Free flight: linear hops between random waypoints with a short stop at each one (v1.0 behaviour). */
+    /** Free flight: linear hops between random waypoints with a short stop at each one. */
     private static final float HOP_MOVE = 5f, HOP_HOLD = 6f, HOP_LEN = HOP_MOVE + HOP_HOLD;
     private static final int WAYPOINTS = 40;
     private final Vector3f[] waypoints = new Vector3f[WAYPOINTS];
@@ -108,7 +108,6 @@ public class Drone {
         int leg = Math.min((int) (ts / HOP_LEN), WAYPOINTS - 2);
         float k = Mth.clamp((ts - leg * HOP_LEN) / HOP_MOVE, 0f, 1f);   // linear move, then hold at the end point
         dest.set(this.waypoints[leg]).lerp(this.waypoints[leg + 1], k);
-        // drift slightly inwards when the whirlwind contracts
         float contract = HenshinInstance.smooth((t - HenshinTiming.CONTRACT_START) / 14f);
         if (contract > 0f) {
             float horiz = Mth.sqrt(dest.x * dest.x + dest.z * dest.z);

@@ -13,6 +13,12 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import com.zillion.client.anim.GeoArmorBender;
+import com.zillion.client.render.CardRenderer;
+import com.zillion.util.TickScheduler;
+import com.zillion.client.anim.PlayerAnimHelper;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
@@ -32,6 +38,24 @@ public final class ZillionClient {
    public static final KeyMapping HENSHIN_KEY = new KeyMapping("key.zillion.henshin", KeyConflictContext.IN_GAME, Type.KEYSYM, 72, "key.categories.zillion");
 
    private ZillionClient() {
+   }
+
+   @SubscribeEvent
+   public static void onClientSetup(FMLClientSetupEvent event) {
+      // player animation layer + GeckoLib armor limb bending (PlayerAnimator / bendy-lib)
+      PlayerAnimHelper.init();
+      GeoArmorBender.register();
+      NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> {
+         GeoArmorBender.clearAll();
+         TickScheduler.clearClient();
+         CardRenderer.clearAll();
+      });
+
+   }
+
+   @SubscribeEvent
+   public static void onAddLayers(net.neoforged.neoforge.client.event.EntityRenderersEvent.AddLayers event) {
+      CardRenderer.onAddLayers(event);
    }
 
    @SubscribeEvent
@@ -71,6 +95,7 @@ public final class ZillionClient {
          }
       }
 
+      TickScheduler.tickClient();
       ClientHenshinHandler.tick();
    }
 }

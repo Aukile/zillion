@@ -5,6 +5,10 @@ import com.zillion.client.fx.HenshinInstance;
 import com.zillion.henshin.HenshinData;
 import com.zillion.item.GazerZeroArmorItem;
 import com.zillion.network.ZNetwork;
+import com.zillion.client.anim.PlayerAnimHelper;
+import com.zillion.client.render.CardRenderer;
+import com.zillion.util.TickScheduler;
+import net.minecraft.client.player.AbstractClientPlayer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.Iterator;
@@ -38,6 +42,9 @@ public final class ClientHenshinHandler {
                if (instx != null) {
                   instx.onArmorEquipped();
                }
+               // armor is on -> the card is gone
+               TickScheduler.cancelClient(payload.entityId());
+               CardRenderer.hide(payload.entityId());
                break;
             case 2:
                HenshinInstance inst = (HenshinInstance)INSTANCES.get(payload.entityId());
@@ -47,8 +54,31 @@ public final class ClientHenshinHandler {
                break;
             case 3:
                INSTANCES.remove(payload.entityId());
+               TickScheduler.cancelClient(payload.entityId());
+               CardRenderer.hide(payload.entityId());
+               if (entity instanceof AbstractClientPlayer p && PlayerAnimHelper.isPlaying(p))
+                  PlayerAnimHelper.stop(p, 6);
+               break;
+            case ZNetwork.HenshinStatePayload.PREPARE:
+               if (entity instanceof AbstractClientPlayer p)
+                  playPrepare(p);
+               break;
+            case ZNetwork.HenshinStatePayload.HENSHIN_ANIM:
+               if (entity instanceof AbstractClientPlayer p)
+                  playHenshinAnim(p);
+               break;
          }
       }
+   }
+
+   /** 1st key press: see {@link CardSequence#prepare} (card: +3 hand, +18 mouth, +35 back to the hand). */
+   private static void playPrepare(AbstractClientPlayer player) {
+      CardSequence.prepare(player);
+   }
+
+   /** 2nd key press: henshin animation, card stays in the hand; the server starts the transformation 40 ticks later. */
+   private static void playHenshinAnim(AbstractClientPlayer player) {
+      CardSequence.henshin(player);
    }
 
    public static void tick() {

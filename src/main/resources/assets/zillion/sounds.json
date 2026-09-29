@@ -1,0 +1,27 @@
+{
+  "henshin": {
+    "subtitle": "subtitles.zillion.henshin",
+    "sounds": [
+      {
+        "name": "zillion:henshin",
+        "stream": true
+      }
+    ]
+  },
+  "gazerzero_login": {
+    "subtitle": "subtitles.zillion.gazerzero_login",
+    "sounds": [
+      {
+        "name": "zillion:gazerzero_login"
+      }
+    ]
+  },
+  "zilliondriver": {
+    "subtitle": "subtitles.zillion.zilliondriver",
+    "sounds": [
+      {
+        "name": "zillion:zilliondriver"
+      }
+    ]
+  }
+}

@@ -9,7 +9,8 @@ public class HenshinData {
                Codec.BOOL.fieldOf("active").forGetter(d -> d.active),
                Codec.INT.fieldOf("tick").forGetter(d -> d.tick),
                Codec.BOOL.fieldOf("transformed").forGetter(d -> d.transformed),
-               Codec.LONG.fieldOf("seed").forGetter(d -> d.seed)
+               Codec.LONG.fieldOf("seed").forGetter(d -> d.seed),
+               Codec.BOOL.optionalFieldOf("prepared", false).forGetter(d -> d.prepared)
             )
             .apply(i, HenshinData::new)
    );
@@ -17,15 +18,18 @@ public class HenshinData {
    public int tick;
    public boolean transformed;
    public long seed;
+   /** First key press done (card shown, login sound) - the next press starts the real transformation. */
+   public boolean prepared;
 
    public HenshinData() {
    }
 
-   public HenshinData(boolean active, int tick, boolean transformed, long seed) {
+   public HenshinData(boolean active, int tick, boolean transformed, long seed, boolean prepared) {
       this.active = active;
       this.tick = tick;
       this.transformed = transformed;
       this.seed = seed;
+      this.prepared = prepared;
    }
 
    public boolean armorShouldBeLocked() {
@@ -36,5 +40,6 @@ public class HenshinData {
       this.active = false;
       this.tick = 0;
       this.transformed = false;
+      this.prepared = false;
    }
 }

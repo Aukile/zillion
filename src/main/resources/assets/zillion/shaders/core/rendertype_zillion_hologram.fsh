@@ -59,7 +59,9 @@ void main() {
     // light lines: red stripes + cyan indicator lights (the tech pattern, not the whole armor)
     float redness = clamp((tex.r - max(tex.g, tex.b) - 0.25) * 4.0, 0.0, 1.0);
     float cyan = clamp((min(tex.g, tex.b) - tex.r - 0.45) * 5.0, 0.0, 1.0) * step(0.75, tex.g);
-    float glowMask = max(redness, cyan);
+    // texels with alpha 254 (instead of 255) are excluded from glowing (mouth + abdominal muscles)
+    float glowAllowed = step(0.998, tex.a);
+    float glowMask = max(redness, cyan) * glowAllowed;
     float pulse = 0.5 + 0.5 * sin(t * 0.35);
     float glowAmt = clamp(redGlow, 0.0, 2.5);
     vec3 emissive = tex.rgb * (0.8 + 0.6 * pulse) * glowMask * glowAmt;

@@ -27,7 +27,7 @@ public final class HenshinTiming {
     public static final float CONTRACT_START = 128;
     public static final float CONTRACT_END = 142;
     // armor is equipped by the server at this tick (green tech-filter shader from here on)
-    public static final int ARMOR_TICK = 140;
+    public static final int ARMOR_TICK = 141;
     public static final float ARMOR_FADE_IN = 22;
     public static final float HOLO_END = 184;
     // docking: all drones reach their hover spot in front of their slot at the same time,
@@ -42,12 +42,15 @@ public final class HenshinTiming {
     public static final float DOCK_ANTICIPATE_DIST = 0.05f;
     // finale: expanding chest rings, sliding line patterns, glowing lines
     public static final float FINALE_START = 186;
+    // darting small emblems during the chest burst
+    public static final float DART_START = 188;
+    public static final float DART_END = 236;
     public static final float FINALE_END = 250;
     // energy scarf flutters, then the real scarf model appears
     public static final float SCARF_FX_START = 190;
     public static final float SCARF_APPEAR = 224;
     // server marks the player as transformed
-    public static final int END_TICK = 254;
+    public static final int END_TICK = 255;
     // one extra flash of the glowing lines after everything finished
     public static final float AFTER_FLASH_START = END_TICK + 8;
     public static final float AFTER_FLASH_END = END_TICK + 30;

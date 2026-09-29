@@ -37,6 +37,7 @@ public final class HenshinRenderer {
     private HenshinRenderer() {}
 
     public static final ResourceLocation EMBLEM_TEX = Zillion.id("textures/gazerzeroeffect.png");
+    public static final ResourceLocation EMBLEM2_TEX = Zillion.id("textures/gazerzeroeffect2.png");
     public static final ResourceLocation DRONE_TEX = Zillion.id("textures/gazerzero_effect_drone.png");
 
     private static final Vector3f GREEN = new Vector3f(0.30f, 1.0f, 0.50f);
@@ -105,6 +106,7 @@ public final class HenshinRenderer {
         renderDataBits(inst, pt, camera, poseStack, src);
         renderDrones(inst, t, yaw, camera, poseStack, src);
         renderScarfEnergy(inst, t, yaw, off, poseStack, src);
+        renderDarts(inst, t, yaw, off, poseStack, src);
         renderFinaleFlash(t, poseStack, src, camera);
 
         poseStack.popPose();
@@ -129,7 +131,7 @@ public final class HenshinRenderer {
             return;
         // phase 1: grow behind the back (vertical, facing the camera-ish / player's back)
         float grow = HenshinInstance.easeOutCubic(HenshinInstance.frac(t, HenshinTiming.EMBLEM_START, HenshinTiming.EMBLEM_GROW_END));
-        float size = Mth.lerp(grow, 0.3f, 2.0f) * (1f + 0.03f * Mth.sin(t * 0.6f));
+        float size = Mth.lerp(grow, 0.5f, 3.2f) * (1f + 0.03f * Mth.sin(t * 0.6f));
         // phase 2: move up above the head while flipping to horizontal
         float flip = HenshinInstance.smooth(HenshinInstance.frac(t, HenshinTiming.EMBLEM_GROW_END - 4, HenshinTiming.EMBLEM_RISE_END - 4));
         float pitch = Mth.lerp(flip, 0f, -90f);   // tilt away from the body (top edge swings backwards) so it never clips the player
@@ -279,20 +281,45 @@ public final class HenshinRenderer {
             }
         }
 
-        // --- broad outer airflow sheets: slow, low alpha, give the whirlwind body --------------------------
-        float sheetA = HenshinInstance.window(t, HenshinTiming.WIND_START + 10, HenshinTiming.CONTRACT_END + 8, 16f, 10f);
-        if (sheetA > 0) {
-            for (int s = 0; s < 6; s++) {
-                float phase = s * Mth.TWO_PI / 6f + t * 0.045f * (s % 2 == 0 ? 1 : -1);
-                float contraction = 1f - HenshinInstance.easeInCubic((t - HenshinTiming.CONTRACT_START) / (HenshinTiming.CONTRACT_END - HenshinTiming.CONTRACT_START)) * 0.8f;
+        // --- wind field: many long bright streaks whipping around the body + tilted swirl rings ------------
+        float fieldA = HenshinInstance.window(t, HenshinTiming.WIND_START + 8, HenshinTiming.CONTRACT_END + 8, 14f, 10f);
+        if (fieldA > 0) {
+            float contraction = 1f - HenshinInstance.easeInCubic((t - HenshinTiming.CONTRACT_START) / (HenshinTiming.CONTRACT_END - HenshinTiming.CONTRACT_START)) * 0.75f;
+            int streaks = 22;
+            for (int k = 0; k < streaks; k++) {
+                float dir = k % 3 == 0 ? -1f : 1f;
+                float seed = k * 2.399f;
+                float sp = 0.16f + 0.05f * ((k * 7) % 5);
+                float ph = seed + t * sp * dir;
+                float baseR = (1.05f + 0.55f * Mth.sin(seed * 3.1f)) * contraction;
+                float baseY = 0.25f + 1.55f * ((Mth.sin(seed * 1.7f) + 1f) * 0.5f);
+                float pitch = 0.9f + 0.6f * Mth.sin(seed * 0.9f);
                 for (int i = 0; i <= segments; i++) {
                     float u = i / (float) segments;
-                    float ang = phase + u * 2.4f;
-                    float rad = (1.35f + 0.25f * Mth.sin(u * 5f + t * 0.1f)) * contraction;
-                    float y = 0.1f + u * 1.9f + 0.1f * Mth.sin(t * 0.15f + s);
+                    float ang = ph + (u - 0.5f) * 1.9f * dir;
+                    float rad = baseR * (1f + 0.18f * Mth.sin(u * 4f + t * 0.3f + seed));
+                    float y = baseY + (u - 0.5f) * pitch + 0.07f * Mth.sin(t * 0.4f + u * 9f + seed);
                     pts[i].set(Mth.cos(ang) * rad, y, Mth.sin(ang) * rad);
                 }
-                ribbon(vc, m, pts, 0.32f, GREEN_SOFT, sheetA * 0.10f, camLocal, 0.03f);
+                float pulse = 0.7f + 0.3f * Mth.sin(t * 0.5f + seed);
+                ribbon(vc, m, pts, 0.03f, WHITE, fieldA * 0.55f * pulse, camLocal, 0f);
+                ribbon(vc, m, pts, 0.10f, GREEN_SOFT, fieldA * 0.30f * pulse, camLocal, 0f);
+                ribbon(vc, m, pts, 0.42f, GREEN_SOFT, fieldA * 0.07f, camLocal, 0f);
+            }
+            for (int k = 0; k < 4; k++) {
+                float tiltX = 0.35f + 0.25f * k, tiltZ = 0.6f * Mth.sin(k * 2.1f);
+                float ph = k * 1.6f - t * (0.05f + 0.015f * k);
+                float rr = (1.6f + 0.25f * k) * contraction;
+                float cy = 0.6f + 0.35f * k;
+                for (int i = 0; i <= segments; i++) {
+                    float u = i / (float) segments;
+                    float ang = ph + u * 4.6f;
+                    float x = Mth.cos(ang) * rr, z = Mth.sin(ang) * rr;
+                    float y = cy + x * tiltX + z * tiltZ;
+                    pts[i].set(x, y, z);
+                }
+                ribbon(vc, m, pts, 0.55f, GREEN_SOFT, fieldA * 0.09f, camLocal, 0f);
+                ribbon(vc, m, pts, 0.08f, GREEN_SOFT, fieldA * 0.22f, camLocal, 0f);
             }
         }
     }
@@ -456,6 +483,66 @@ public final class HenshinRenderer {
         if (flare > 0)
             billboard(poseStack, src, ZRenderTypes.circle(1, 0f, 0f, 1f, false), new Vector3f(tailX, collarY - 0.1f, tailZ), 0.8f, RED, flare,
                     new Quaternionf().rotationY((float) Math.toRadians(-(180f - yaw))).mul(cameraRotation()));
+        poseStack.popPose();
+    }
+
+    // ------------------------------------------------------------------ darting emblems
+    /**
+     * After the drones dock, while the chest rings burst out, small pentagon emblems (gazerzeroeffect2) dart around
+     * the rider in fast straight diagonal hops, in left/right mirrored pairs. Each hop first draws a thin green trail
+     * line along the path, then the emblem snaps along it, tip first (ref 61-65).
+     */
+    private static void renderDarts(HenshinInstance inst, float t, float yaw, Vector3f off, PoseStack poseStack, MultiBufferSource src) {
+        float a = HenshinInstance.window(t, HenshinTiming.DART_START, HenshinTiming.DART_END, 3f, 8f);
+        if (a <= 0f)
+            return;
+        // body space (x = player's left, z = forward) so the mirrored pairs are symmetric about the player's facing
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(180f - yaw));
+        Quaternionf bodyRot = new Quaternionf().rotationY((float) Math.toRadians(-(180f - yaw)));
+        Vector3f camLocal = bodyRot.transform(new Vector3f(off).negate());
+        Matrix4f m = poseStack.last().pose();
+        Quaternionf camRot = new Quaternionf(bodyRot).mul(cameraRotation());
+        Vector3f[] seg = new Vector3f[2];
+        for (HenshinInstance.Dart d : inst.darts) {
+            float local = t - HenshinTiming.DART_START - d.delay;
+            if (local < 0)
+                continue;
+            int hop = (int) (local / HenshinInstance.Dart.HOP_LEN);
+            if (hop >= HenshinInstance.Dart.HOPS)
+                continue;
+            float k = local - hop * HenshinInstance.Dart.HOP_LEN;
+            Vector3f from = d.points[hop], to = d.points[hop + 1];
+            float lineK = Mth.clamp(k / HenshinInstance.Dart.LINE_TIME, 0f, 1f);
+            float moveK = Mth.clamp((k - HenshinInstance.Dart.LINE_TIME) / HenshinInstance.Dart.MOVE_TIME, 0f, 1f);
+            float fade = 1f - Mth.clamp((k - HenshinInstance.Dart.LINE_TIME - HenshinInstance.Dart.MOVE_TIME) / HenshinInstance.Dart.HOLD_TIME, 0f, 1f);
+            Vector3f head = new Vector3f(from).lerp(to, lineK);
+            Vector3f tail = new Vector3f(from).lerp(to, moveK);
+            if (lineK > 0.01f && fade > 0f) {
+                seg[0] = tail;
+                seg[1] = head;
+                // fetch the buffer per dart: the textured emblem quad below switches render type on the immediate source
+                VertexConsumer line = src.getBuffer(ZRenderTypes.ENERGY);
+                ribbon(line, m, seg, 0.025f, WHITE, a * 0.9f * fade, camLocal, 0f);
+                ribbon(line, m, seg, 0.09f, GREEN, a * 0.35f * fade, camLocal, 0f);
+            }
+            Vector3f pos = moveK > 0f ? tail : from;
+            poseStack.pushPose();
+            poseStack.translate(pos.x, pos.y, pos.z);
+            poseStack.mulPose(camRot);
+            // orient the emblem: the tip the two F-shapes' long edges point at (bottom of the texture, -y) leads
+            // along the current hop direction, projected onto the billboard plane. No continuous spinning.
+            Vector3f dir = new Vector3f(to).sub(from);
+            new Quaternionf(camRot).conjugate().transform(dir);
+            float heading = (float) Mth.atan2(dir.y, dir.x);
+            poseStack.mulPose(Axis.ZP.rotation(heading + Mth.HALF_PI));
+            Matrix4f mm = poseStack.last().pose();
+            VertexConsumer vc = src.getBuffer(ZRenderTypes.GLOW_TEX.apply(EMBLEM2_TEX));
+            float h = 0.15f;
+            quad(vc, mm, -h, -h, h, h, 0, 0, 1, 1, GREEN.x, GREEN.y, GREEN.z, a);
+            quad(vc, mm, -h * 1.5f, -h * 1.5f, h * 1.5f, h * 1.5f, 0, 0, 1, 1, GREEN.x, GREEN.y, GREEN.z, a * 0.3f);
+            poseStack.popPose();
+        }
         poseStack.popPose();
     }
 

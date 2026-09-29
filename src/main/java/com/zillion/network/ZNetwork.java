@@ -50,6 +50,10 @@ public final class ZNetwork {
       public static final int ARMOR = 1;
       public static final int FINISH = 2;
       public static final int RESET = 3;
+      /** first key press: play henshin_front + card sequence */
+      public static final int PREPARE = 4;
+      /** second key press: play henshin animation, transformation follows 40 ticks later */
+      public static final int HENSHIN_ANIM = 5;
 
       public Type<? extends CustomPacketPayload> type() {
          return TYPE;

@@ -3,11 +3,11 @@ package com.zillion.henshin;
 import com.zillion.Zillion;
 import com.zillion.item.GazerZeroArmorItem;
 import com.zillion.network.ZNetwork;
+import com.zillion.util.TickScheduler;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -55,25 +55,83 @@ public final class HenshinServer {
         return data(player).armorShouldBeLocked();
     }
 
-    /** Called when the client's henshin key is pressed. */
+    /** Delay between the 2nd key press (henshin animation start) and the actual transformation. */
+    public static final int HENSHIN_ANIM_DELAY = 40;
+    /** Delay between the 1st key press and the "gazerzero_login" sound. */
+    public static final int LOGIN_SOUND_DELAY = 27;
+
+    /**
+     * Called when the client's henshin key is pressed.
+     * <ol>
+     *   <li>1st press (driver worn, not transformed): "prepare" - the client plays henshin_front + card sequence,
+     *       the login sound follows {@value #LOGIN_SOUND_DELAY} ticks later.</li>
+     *   <li>2nd press: the client plays the henshin animation, and {@link #startTransformation} runs
+     *       {@value #HENSHIN_ANIM_DELAY} ticks later.</li>
+     * </ol>
+     */
     public static void tryStart(ServerPlayer player) {
         HenshinData data = data(player);
         if (data.active || data.transformed)
             return;
-        if (!wearingDriver(player))
+        if (!canTransform(player))
             return;
-        // all three armor slots must be free so the armor can materialise
+        if (!data.prepared) {
+            data.prepared = true;
+            broadcast(player, ZNetwork.HenshinStatePayload.PREPARE, 0);
+            // reserved in the delayed sound manager -> cancelled by the 2nd press / driver removal / death
+            DelayedSoundManager.scheduleLogin(player);
+            return;
+        }
+        // second press: player animation first, transformation 40 ticks later
+        data.prepared = false;
+        data.active = true;          // blocks further presses / locks the driver during the wind-up
+        data.tick = -HENSHIN_ANIM_DELAY;
+        data.seed = player.getRandom().nextLong();
+        DelayedSoundManager.cancelLogin(player); // 2nd press -> a not-yet-played login sound is cancelled
+        lockDriver(player, true);
+        broadcast(player, ZNetwork.HenshinStatePayload.HENSHIN_ANIM, data.seed);
+        TickScheduler.server(player.getUUID(), HENSHIN_ANIM_DELAY, () -> startTransformation(player));
+    }
+
+    /** Driver worn and all three armor slots free so the armor can materialise. */
+    public static boolean canTransform(ServerPlayer player) {
+        if (!wearingDriver(player))
+            return false;
         for (EquipmentSlot slot : ARMOR_SLOTS) {
             if (!player.getItemBySlot(slot).isEmpty())
-                return;
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * The complete transformation in one call: starts the effect sequence (clients get the START state and run the
+     * VFX), locks the driver, equips the bound armor at {@link HenshinTiming#ARMOR_TICK} and finishes at
+     * {@link HenshinTiming#END_TICK} (both handled in {@link #onPlayerTick}). Safe to call directly, e.g. from commands.
+     */
+    public static void startTransformation(ServerPlayer player) {
+        if (player.isRemoved() || player.hasDisconnected())
+            return;
+        HenshinData data = data(player);
+        if (data.transformed)
+            return;
+        boolean windUp = data.active && data.tick < 0;
+        if (data.active && !windUp)
+            return;
+        if (!canTransform(player)) {
+            if (windUp)
+                untransform(player, true);
+            return;
         }
         data.active = true;
+        data.prepared = false;
         data.tick = 0;
         data.transformed = false;
-        data.seed = player.getRandom().nextLong();
+        if (!windUp)
+            data.seed = player.getRandom().nextLong();
         lockDriver(player, true);
         broadcast(player, ZNetwork.HenshinStatePayload.START, data.seed);
-        player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.8F, 1.6F);
+        DelayedSoundManager.playHenshin(player); // henshin.ogg on the player (follows him) + stops gazerzero_login
     }
 
     private static void broadcast(ServerPlayer player, int state, long seed) {
@@ -133,8 +191,9 @@ public final class HenshinServer {
         purgeBound(player.getInventory().items);
         purgeBound(player.getInventory().offhand);
         HenshinData data = data(player);
-        boolean wasSomething = data.active || data.transformed;
+        boolean wasSomething = data.active || data.transformed || data.prepared;
         data.reset();
+        TickScheduler.cancelServer(player.getUUID());
         lockDriver(player, false);
         // drivers that ended up in the inventory keep no lock either
         for (ItemStack s : player.getInventory().items)
@@ -159,16 +218,23 @@ public final class HenshinServer {
             return;
         HenshinData data = data(player);
 
+        if (data.prepared && !wearingDriver(player)) {
+            // driver taken off after the first press -> card sequence is cancelled
+            untransform(player, true);
+            return;
+        }
+
         if (data.active) {
-            data.tick++;
             if (!wearingDriver(player)) {
                 untransform(player, true);
                 return;
             }
+            if (data.tick < 0)
+                return; // wind-up (henshin animation) - the scheduler calls startTransformation()
+            data.tick++;
             if (data.tick == HenshinTiming.ARMOR_TICK) {
                 equipArmor(player);
                 broadcast(player, ZNetwork.HenshinStatePayload.ARMOR, data.seed);
-                player.level().playSound(null, player.blockPosition(), SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS, 1.0F, 1.4F);
             }
             if (data.tick >= HenshinTiming.END_TICK) {
                 data.active = false;
